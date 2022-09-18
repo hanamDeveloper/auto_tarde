@@ -1,9 +1,9 @@
 #홈페이지에서 API서비스 신청시 받은 Appkey, Appsecret 값 설정
-APP_KEY: ""
-APP_SECRET: ""
+APP_KEY: "PSjB6LIn8ii38lUxlJi8oNcdalxLdghEnJLR"
+APP_SECRET: "Nzew1Wxpkb6ujCqE4EouZ+6K7fSzin6ObbTK4QyjCvyuuA9n1arPPgw2qx6oO1nn6HLyPFii/9nkydEDqzXkxqq/cRM2L+3STyg6V3HNbwkcxlA3egtE20mahj6p88H6wYae9yfiCgjKmowxuWgXfuqDsb6lwgtzmR8II9a8hi3nS3jfh8s="
 
 #계좌번호 앞 8자리
-CANO: ""
+CANO: "73907108"
 #계좌번호 뒤 2자리
 ACNT_PRDT_CD: "01"
 
@@ -13,4 +13,25 @@ URL_BASE: "https://openapi.koreainvestment.com:9443"
 # URL_BASE: "https://openapivts.koreainvestment.com:29443"
 
 #디스코드 웹훅 URL
-DISCORD_WEBHOOK_URL: ""
+DISCORD_WEBHOOK_URL: "https://discord.com/api/webhooks/1016002837886541915/DP7gsRPaENcj1jkA6Vl2CZdILUeBMmbJzkTnzzsuNThbO8MubCEMOex3ttHhXaHK_WHd"
+
+
+# 형
+# #계좌번호 앞 8자리
+# CANO: "73786459"
+# #계좌번호 뒤 2자리
+# ACNT_PRDT_CD: "01"
+
+
+# 형
+# #계좌번호 앞 8자리
+# CANO: "63559436"
+# #계좌번호 뒤 2자리
+# ACNT_PRDT_CD: "01"
+
+
+# 엄마
+# #계좌번호 앞 8자리
+# CANO: "73907108"
+# #계좌번호 뒤 2자리
+# ACNT_PRDT_CD: "01"
