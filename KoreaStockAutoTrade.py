@@ -60,7 +60,8 @@ def get_current_price(code="005930"):
     "fid_input_iscd":code,
     }
     res = requests.get(URL, headers=headers, params=params)
-    return int(res.json()['output']['stck_prpr'])
+    # return int(res.json()['output']['stck_prpr'])
+    return res.json()['output']
 
 def get_target_price(code="005930"):
     """변동성 돌파 전략으로 매수 목표가 조회"""
@@ -79,7 +80,6 @@ def get_target_price(code="005930"):
     }
     res = requests.get(URL, headers=headers, params=params)
     stck_oprc = int(res.json()['output'][0]['stck_oprc']) #오늘 시가
-    send_message(f"[오늘 시가]{stck_oprc}")
     # stck_hgpr = int(res.json()['output'][1]['stck_hgpr']) #전일 고가
     # stck_lwpr = int(res.json()['output'][1]['stck_lwpr']) #전일 저가
     target_price = stck_oprc
@@ -182,7 +182,12 @@ def buy(code="005930", qty="1"):
         send_message(f"[매수 실패]{str(res.json())}")
         return False
 # 실전투자: TTTC0801U, 모의투자 VTTC0801U
-def sell(code="005930", qty="1"):
+def sell(code="005930", qty="1", sell_price="100000"):
+    ORD_DVSN = "01" if sell_price == "100000" else "00"
+    ORD_UNPR = str("0" if sell_price == "100000" else sell_price)
+    print("code", code)
+    print("qty", qty)
+
     """주식 시장가 매도"""
     PATH = "uapi/domestic-stock/v1/trading/order-cash"
     URL = f"{URL_BASE}/{PATH}"
@@ -190,9 +195,9 @@ def sell(code="005930", qty="1"):
         "CANO": CANO,
         "ACNT_PRDT_CD": ACNT_PRDT_CD,
         "PDNO": code,
-        "ORD_DVSN": "01",
-        "ORD_QTY": qty,
-        "ORD_UNPR": "0",
+        "ORD_DVSN": ORD_DVSN,
+        "ORD_QTY": "1",
+        "ORD_UNPR": ORD_UNPR,
     }
     headers = {"Content-Type":"application/json", 
         "authorization":f"Bearer {ACCESS_TOKEN}",
@@ -214,8 +219,10 @@ def sell(code="005930", qty="1"):
 try:
     ACCESS_TOKEN = get_access_token()
     
-    symbol_list = ["005930","035720","000660","069500"] # 매수 희망 종목 리스트
+    # symbol_list = ["024110", "316140", "030200", "003490", "086790","055550","015760","069500"] # 매수 희망 종목 리스트
+    symbol_list = ["024110", "316140", "030200"] # 매수 희망 종목 리스트
     bought_list = [] # 매수 완료된 종목 리스트
+
     total_cash = get_balance() # 보유 현금 조회
     print(total_cash)
     stock_dict = get_stock_balance() # 보유 주식 조회
@@ -234,9 +241,9 @@ try:
         t_sell = t_now.replace(hour=15, minute=15, second=0, microsecond=0)
         t_exit = t_now.replace(hour=15, minute=20, second=0,microsecond=0)
         today = datetime.datetime.today().weekday()
-        if today == 5 or today == 6:  # 토요일이나 일요일이면 자동 종료
-            send_message("주말이므로 프로그램을 종료합니다.")
-            break
+        # if today == 5 or today == 6:  # 토요일이나 일요일이면 자동 종료
+        #     send_message("주말이므로 프로그램을 종료합니다.")
+        #     break
         if t_9 < t_now < t_start and soldout == False: # 잔여 수량 매도
             for sym, qty in stock_dict.items():
                 sell(sym, qty)
@@ -246,24 +253,39 @@ try:
         if t_start < t_now < t_sell :  # AM 09:00 ~ PM 03:15 : 매수
             for sym in symbol_list:
                 if len(bought_list) < target_buy_count:
-                    if sym in bought_list:
+                    #if sym in bought_list:
+                    for sym, qty in stock_dict.items():
+                        target_price = get_target_price(sym)
+                        current_price_info = get_current_price(sym)
+                        current_price = int(current_price_info['stck_prpr']) # 현재가
+                        current_price_unit = int(current_price_info['aspr_unit']) # 호가
+                        plus_sell_price = target_price + target_price * 0.003 
+                        
+                        if current_price > plus_sell_price: 
+                                send_message(f"{sym} 0.3프로 상승 목표가 달성({target_price} {current_price} {target_price + current_price_unit })에 매도 시도합니다.")
+                                sell(sym, qty, target_price + current_price_unit)
                         continue
                     target_price = get_target_price(sym)
-                    current_price = get_current_price(sym)
-                    if current_price > target_price + target_price * 0.03:
-                        send_message(f"{sym} 0.3프로 상승 목표가 달성({target_price} {current_price} {target_price + target_price * 0.03})에 매도 시도합니다.")
-                        sell(sym)
-                    if target_price < current_price:
-                        buy_qty = 0  # 매수할 수량 초기화
-                        buy_qty = int(buy_amount // current_price)
-                        if buy_qty > 0:
-                            send_message(f"{sym} 목표가 달성({target_price} < {current_price}) 매수를 시도합니다.")
-                            result = buy(sym, buy_qty)
-                            if result:
-                                soldout = False
-                                bought_list.append(sym)
-                                get_stock_balance()
-                    time.sleep(1)
+                    current_price_info = get_current_price(sym)
+                    current_price = int(current_price_info['stck_prpr'])
+                    current_price_unit = int(current_price_info['aspr_unit'])
+                    plus_sell_price = target_price + target_price * 0.003 
+                    
+                    # if current_price > plus_sell_price:
+                    #     send_message(f"{sym} 0.3프로 상승 목표가 달성({target_price} {current_price} {target_price + current_price_unit })에 매도 시도합니다.")
+                    #     sell(sym, 1, target_price + current_price_unit)
+                    if(sym not in bought_list):
+                        if target_price < current_price:
+                            buy_qty = 0  # 매수할 수량 초기화
+                            buy_qty = int(buy_amount // current_price)
+                            if buy_qty > 0:
+                                send_message(f"{sym} 목표가 달성({target_price} < {current_price}) 매수를 시도합니다.")
+                                result = buy(sym, buy_qty)
+                                if result:
+                                    soldout = False
+                                    bought_list.append(sym)
+                                    get_stock_balance()
+                        time.sleep(1)
             time.sleep(1)
             if t_now.minute == 30 and t_now.second <= 5: 
                 get_stock_balance()
